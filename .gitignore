@@ -11,3 +11,6 @@ examples*
 build
 *.egg-info/
 *.zip
+0.28.1
+0.21
+2.0.0

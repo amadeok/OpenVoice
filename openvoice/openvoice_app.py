@@ -1,5 +1,6 @@
 import os
 import torch
+print(torch.__version__)
 import argparse
 import gradio as gr
 from zipfile import ZipFile
@@ -34,18 +35,18 @@ zh_source_se = torch.load(f'{zh_ckpt_base}/zh_default_se.pth').to(device)
 # This online demo mainly supports English and Chinese
 supported_languages = ['zh', 'en']
 
-def predict(prompt, style, audio_file_pth, agree):
+def predict(prompt, style, audio_file_pth):
     # initialize a empty info
     text_hint = ''
     # agree with the terms
-    if agree == False:
-        text_hint += '[ERROR] Please accept the Terms & Condition!\n'
-        gr.Warning("Please accept the Terms & Condition!")
-        return (
-            text_hint,
-            None,
-            None,
-        )
+    # if agree == False:
+    #     text_hint += '[ERROR] Please accept the Terms & Condition!\n'
+    #     gr.Warning("Please accept the Terms & Condition!")
+    #     return (
+    #         text_hint,
+    #         None,
+    #         None,
+    #     )
 
     # first detect the input language
     language_predicted = langid.classify(prompt)[0].strip()  
@@ -102,16 +103,16 @@ def predict(prompt, style, audio_file_pth, agree):
             None,
             None,
         )
-    if len(prompt) > 200:
-        text_hint += f"[ERROR] Text length limited to 200 characters for this demo, please try shorter text. You can clone our open-source repo and try for your usage \n"
-        gr.Warning(
-            "Text length limited to 200 characters for this demo, please try shorter text. You can clone our open-source repo for your usage"
-        )
-        return (
-            text_hint,
-            None,
-            None,
-        )
+    # if len(prompt) > 200:
+    #     text_hint += f"[ERROR] Text length limited to 200 characters for this demo, please try shorter text. You can clone our open-source repo and try for your usage \n"
+    #     gr.Warning(
+    #         "Text length limited to 200 characters for this demo, please try shorter text. You can clone our open-source repo for your usage"
+    #     )
+    #     return (
+    #         text_hint,
+    #         None,
+    #         None,
+    #     )
     
     # note diffusion_conditioning not used on hifigan (default mode), it will be empty but need to pass it to model.inference
     try:
@@ -209,7 +210,7 @@ examples = [
     ],
 ]
 
-with gr.Blocks(analytics_enabled=False) as demo:
+with gr.Blocks(analytics_enabled=False, title="Openvoice - gradio") as demo:
 
     with gr.Row():
         with gr.Column():
@@ -249,11 +250,11 @@ with gr.Blocks(analytics_enabled=False) as demo:
                 type="filepath",
                 value="resources/demo_speaker2.mp3",
             )
-            tos_gr = gr.Checkbox(
-                label="Agree",
-                value=False,
-                info="I agree to the terms of the cc-by-nc-4.0 license-: https://github.com/myshell-ai/OpenVoice/blob/main/LICENSE",
-            )
+            # tos_gr = gr.Checkbox(
+            #     label="Agree",
+            #     value=False,
+            #     info="I agree to the terms of the cc-by-nc-4.0 license-: https://github.com/myshell-ai/OpenVoice/blob/main/LICENSE",
+            # )
 
             tts_button = gr.Button("Send", elem_id="send-btn", visible=True)
 
@@ -265,11 +266,11 @@ with gr.Blocks(analytics_enabled=False) as demo:
 
             gr.Examples(examples,
                         label="Examples",
-                        inputs=[input_text_gr, style_gr, ref_gr, tos_gr],
+                        inputs=[input_text_gr, style_gr, ref_gr],
                         outputs=[out_text_gr, audio_gr, ref_audio_gr],
                         fn=predict,
                         cache_examples=False,)
-            tts_button.click(predict, [input_text_gr, style_gr, ref_gr, tos_gr], outputs=[out_text_gr, audio_gr, ref_audio_gr])
+            tts_button.click(predict, [input_text_gr, style_gr, ref_gr], outputs=[out_text_gr, audio_gr, ref_audio_gr])
 
 demo.queue()  
-demo.launch(debug=True, show_api=True, share=args.share)
+demo.launch(debug=True, show_api=True, share=args.share, server_port=7960)
